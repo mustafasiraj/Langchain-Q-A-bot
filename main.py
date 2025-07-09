@@ -1,58 +1,66 @@
 import os
-import sys
-import streamlit as st
+import tempfile
+from langchain.document_loaders import PyPDFLoader
+from langchain.text_splitter import CharacterTextSplitter
+from langchain.embeddings import OpenAIEmbeddings
+from langchain.vectorstores import FAISS
+from langchain.chains import RetrievalQA
+from langchain.llms import OpenAI
 
-# ✅ Ensure local modules folder is in path
-sys.path.append(os.path.dirname(__file__))
+# Set your API key here (or use .env file or prompt)
+os.environ["OPENAI_API_KEY"] = "sk-your-real-key-here"
 
-# ✅ Import your QA chain from modules
-from modules.qa_chain import load_pdf_and_create_qa
+def load_pdf_and_create_qa(pdf_paths):
+    all_pages = []
 
-# ✅ Set your OpenAI key securely
-os.environ["OPENAI_API_KEY"] = "ADD_YOUR_OWN_API_KEYYY"
+    for path in pdf_paths:
+        loader = PyPDFLoader(path)
+        all_pages.extend(loader.load())
 
-# ✅ Streamlit config
-st.set_page_config(page_title="📄 LangChain PDF Q&A Bot", page_icon="🤖")
-st.title("📄 LangChain PDF Q&A AI Agent")
+    splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=100)
+    chunks = splitter.split_documents(all_pages)
 
-# ✅ Session state for chat history
-if "history" not in st.session_state:
-    st.session_state.history = []
+    embeddings = OpenAIEmbeddings()
+    vectorstore = FAISS.from_documents(chunks, embeddings)
 
-# ✅ Upload PDF files
-uploaded_files = st.file_uploader("Upload one or more PDF files", type="pdf", accept_multiple_files=True)
+    retriever = vectorstore.as_retriever()
+    qa = RetrievalQA.from_chain_type(
+        llm=OpenAI(temperature=0),
+        retriever=retriever,
+        return_source_documents=True
+    )
 
-# ✅ LLM Backend choice (future expansion)
-llm_choice = st.selectbox("Choose LLM Backend", ["OpenAI"])
+    sources = [doc.page_content[:300].strip() + "..." for doc in chunks[:3]]
+    return qa, sources
 
-# ✅ Ask a question
-question = st.text_input("Ask a question about your PDFs")
+def main():
+    print("📄 LangChain PDF Q&A Bot (Terminal Version)")
 
-# ✅ Clear chat button
-if st.button("🗑️ Clear Chat"):
-    st.session_state.history = []
-    st.experimental_rerun()
+    # Step 1: Ask for PDF file paths
+    paths_input = input("Enter path(s) to PDF file(s), separated by commas:\n> ")
+    pdf_paths = [p.strip() for p in paths_input.split(",") if p.strip()]
 
-# ✅ Process the question and show the answer
-if uploaded_files and question:
-    with st.spinner("Processing... Please wait."):
-        try:
-            qa, sources = load_pdf_and_create_qa(uploaded_files, llm_choice)
-            response = qa({"query": question})
-            answer = response["result"]
-            sources = response.get("source_documents", [])
-            st.session_state.history.append((question, answer, sources))
-        except Exception as e:
-            st.error(f"❌ Error: {str(e)}")
+    # Step 2: Ask a question
+    question = input("\n❓ What do you want to ask about your PDFs?\n> ")
 
-# ✅ Display chat history
-if st.session_state.history:
-    st.subheader("🧠 Q&A History")
-    for q, a, sources in reversed(st.session_state.history):
-        st.markdown(f"**Q:** {q}")
-        st.markdown(f"**A:** {a}")
-        if sources:
-            with st.expander("📚 Sources"):
-                for i, s in enumerate(sources, 1):
-                    st.markdown(f"**Source {i}:** {s}")
-        st.markdown("---")
+    if not pdf_paths or not question:
+        print("❌ Please provide both PDF paths and a question.")
+        return
+
+    print("\n⏳ Processing your PDFs and question...\n")
+
+    try:
+        qa, sources = load_pdf_and_create_qa(pdf_paths)
+        result = qa.invoke({"query": question})
+        answer = result["result"]
+
+        print("✅ Answer:")
+        print(answer)
+        print("\n📚 Top Source Snippets:")
+        for i, source in enumerate(sources, 1):
+            print(f"\nSource {i}:\n{source}")
+    except Exception as e:
+        print(f"❌ Error: {e}")
+
+if __name__ == "__main__":
+    main()
