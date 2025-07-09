@@ -9,6 +9,8 @@
 
 **See source snippets from your PDFs used to generate the answers.**
 
+---------
+
 ## 🚀 Features
 **📎 Upload multiple PDFs from local file paths**
 
@@ -20,10 +22,14 @@
 
 **🧪 Runs completely in terminal — no Streamlit or web UI**
 
+------------
+
 ## 🛠️ Dependencies
 **Install required packages:**
 
 - pip install langchain openai faiss-cpu pypdf tiktoken
+
+----------------
 
 ## 🧾 How to Use
 - Clone or copy this script into a .py file (e.g. pdf_qa_bot.py)
@@ -44,11 +50,14 @@
 - H:\PDFs\intro_to_Machine_learning_Test.pdf
 - Then type your question about the content.
 
+------------
+
 ## 📦 File Structure Example
 
-|pdf_qa_bot.py     |    ← Your main Python script|
-|README.md         |    ← (This file)|
-|H:\PDFs\yourfile.pdf | ← PDF file path you enter|
+|pdf_qa_bot.py        |    ← Your main Python script|
+|README.md            |    ← (This file)            |
+|H:\PDFs\yourfile.pdf | ← PDF file path you enter   |
+
 🧠 How It Works
 Loads PDFs using PyPDFLoader.
 
@@ -66,10 +75,14 @@ Passes them to RetrievalQA using OpenAI
 
 Returns the answer and shows preview snippets from top matched content.
 
+------------
+
 🔐 API Key Warning
 Never commit your OPENAI_API_KEY to public GitHub repositories.
 
 Use .env or other secret management practices.
+
+----------------
 
 🧪 Example Output
 
@@ -77,8 +90,12 @@ Use .env or other secret management practices.
 **Enter path(s) to PDF file(s), separated by commas:
 > H:\PDFs\intro_to_Machine_learning_Test.pdf
 
+----------
+
 ## ❓ What do you want to ask about your PDFs?
 > What is this PDF about?
+
+-------------
 
 #### ⏳ Processing your PDFs and question...
 
